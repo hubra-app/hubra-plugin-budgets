@@ -4,7 +4,7 @@ version: "1.0.0"
 hubra: ">=0.1,<1"
 description: "A yearly budget per transaction category, compared with what was booked. Approve and lock it, and copy it to the next year."
 author: Hubra
-homepage: https://github.com/hubra-app/hubra
+homepage: https://github.com/hubra-app/hubra-plugin-budgets
 tags: [finance]
 package: hubra_budgets
 modules: [finance.budgets]
