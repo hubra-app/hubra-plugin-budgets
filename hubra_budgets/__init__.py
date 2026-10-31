@@ -17,3 +17,7 @@ module = Module(
     ),
     tables=("budgets", "budget_lines"),
 )
+
+from .fee_basis import register as _register_fee_basis  # noqa: E402
+
+_register_fee_basis()
