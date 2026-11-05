@@ -27,12 +27,20 @@ class Budget(db.Model):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Approved by the general assembly; approved budgets are read-only.
     approved: Mapped[bool] = mapped_column(db.Boolean, nullable=False, default=False)
+    # The member responsible for this budget (Budgetverantwortliche:r, such
+    # as a team's leader): they may plan its lines and notes without the
+    # right to edit every budget. Approving stays with budgets.write.
+    owner_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
     )
+
+    owner = relationship("Member", foreign_keys=[owner_id])
 
     lines: Mapped[list[BudgetLine]] = relationship(
         back_populates="budget",

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 
 from hubra.api.auth.helpers import get_current_member
-from hubra.api.permissions import permission_required
+from hubra.api.permissions import created_by, permission_required
+from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 
-from .services import BudgetService, budget_to_dict
+from .models import Budget
+from .services import OWNER_FIELDS, BudgetService, budget_to_dict
 
 budgets_bp = Blueprint("budgets_bp", __name__)
 
@@ -19,6 +21,14 @@ def _body() -> dict:
 
 def _actor() -> int:
     return get_current_member().id
+
+
+# The budget's owner plans it: lines and notes, without budgets.write.
+_own_budget = created_by(Budget, column="owner_id", arg="budget_id", reason="owner")
+
+
+def _owner_only() -> bool:
+    return g.get("permission_scope") == "object"
 
 
 def _done(budget, status=200):
@@ -34,7 +44,7 @@ def list_budgets():
 
 
 @budgets_bp.get("/<int:budget_id>")
-@permission_required("budgets", "read", "View budgets")
+@permission_required("budgets", "read", "View budgets", allow=_own_budget)
 def get_budget(budget_id: int):
     return jsonify(budget_to_dict(BudgetService.get(budget_id), with_lines=True)), 200
 
@@ -46,9 +56,16 @@ def create_budget():
 
 
 @budgets_bp.patch("/<int:budget_id>")
-@permission_required("budgets", "write", "Edit budgets")
+@permission_required("budgets", "write", "Edit budgets", allow=_own_budget)
 def update_budget(budget_id: int):
-    return _done(BudgetService.update(budget_id, _body(), _actor()))
+    body = _body()
+    if _owner_only() and set(body) - OWNER_FIELDS:
+        raise_error(
+            403,
+            "BUDGET_OWNER",
+            "As the budget's owner you can change its lines and notes only",
+        )
+    return _done(BudgetService.update(budget_id, body, _actor()))
 
 
 @budgets_bp.delete("/<int:budget_id>")
@@ -60,7 +77,7 @@ def delete_budget(budget_id: int):
 
 
 @budgets_bp.put("/<int:budget_id>/lines")
-@permission_required("budgets", "write", "Edit budgets")
+@permission_required("budgets", "write", "Edit budgets", allow=_own_budget)
 def set_lines(budget_id: int):
     return _done(BudgetService.set_lines(budget_id, _body().get("lines"), _actor()))
 

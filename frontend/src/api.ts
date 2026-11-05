@@ -19,6 +19,9 @@ export interface Budget {
   name: string
   notes: string | null
   approved: boolean
+  /** The member responsible for the budget: plans its lines and notes. */
+  ownerId: number | null
+  ownerName: string | null
   totals: Record<BudgetKind, { planned: string; actual: string }>
   plannedResult: string
   actualResult: string
@@ -46,7 +49,13 @@ export const createBudget = (input: { name: string; year: number }) =>
 
 export const updateBudget = (
   id: number,
-  input: { name?: string; year?: number; notes?: string; approved?: boolean },
+  input: {
+    name?: string
+    year?: number
+    notes?: string
+    approved?: boolean
+    owner_id?: number | null
+  },
 ) =>
   apiFetch<Budget>(`/budgets/${id}`, {
     method: 'PATCH',

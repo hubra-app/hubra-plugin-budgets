@@ -139,3 +139,39 @@ def test_approved_budget_is_locked_and_copy(client, auth_headers, cats):
 def test_budgets_need_finance(client, auth_headers, cats):
     set_modules(False, "finance.budgets")
     assert client.get("/api/v1/budgets/").status_code == 403
+
+
+def test_budget_owner_plans_their_budget(client, db, seeded_db, auth_headers, cats):
+    from tests.authz.conftest import _create_member_with_role, _login_member
+
+    fees, _ = cats
+    lead, _ = _create_member_with_role(
+        "lead@test.ch",
+        "Teamleitung",
+        seeded_db["tier"].id,
+        permission_keys=["budgets.budgets.read"],
+    )
+    own = _create(client, cats).get_json()["id"]
+    other = client.post("/api/v1/budgets/", json={"name": "Other", "year": 2026})
+    other = other.get_json()["id"]
+    resp = client.patch(f"/api/v1/budgets/{own}", json={"owner_id": lead.id})
+    assert resp.get_json()["ownerId"] == lead.id
+    assert resp.get_json()["ownerName"]
+    bad = client.patch(f"/api/v1/budgets/{own}", json={"owner_id": 99999})
+    assert bad.status_code == 400
+
+    _login_member(client, "lead@test.ch")
+    lines = [{"category_id": fees.id, "kind": "income", "planned": 700}]
+    assert client.put(f"/api/v1/budgets/{own}/lines", json={"lines": lines}).status_code == 200
+    assert client.patch(f"/api/v1/budgets/{own}", json={"notes": "Plan"}).status_code == 200
+    # Not the rest: approving, renaming, handing it on, deleting, other budgets.
+    for change in ({"approved": True}, {"name": "Mine"}, {"owner_id": None}):
+        assert client.patch(f"/api/v1/budgets/{own}", json=change).status_code == 403
+    assert client.delete(f"/api/v1/budgets/{own}").status_code == 403
+    assert client.put(f"/api/v1/budgets/{other}/lines", json={"lines": lines}).status_code == 403
+    assert client.post("/api/v1/budgets/", json={"name": "New", "year": 2026}).status_code == 403
+
+    # Copying to next year keeps the owner.
+    _login_member(client, "admin@test.ch")
+    copy = client.post(f"/api/v1/budgets/{own}/copy", json={}).get_json()
+    assert copy["ownerId"] == lead.id

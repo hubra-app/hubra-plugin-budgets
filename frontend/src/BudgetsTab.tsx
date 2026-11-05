@@ -16,7 +16,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconPlus, IconTrash } from '@tabler/icons-react'
 import { useT } from '@hubra/plugin-sdk'
 import { useAuth, useToast } from '@hubra/plugin-sdk'
-import { ConfirmModal, Field, Modal } from '@hubra/plugin-sdk'
+import { ConfirmModal, Field, MemberPicker, Modal } from '@hubra/plugin-sdk'
 import { listTxCategories } from '@hubra/plugin-sdk'
 import {
   copyBudget,
@@ -45,7 +45,7 @@ const chf = (v: string | number) =>
 export function BudgetsTab() {
   const { t } = useT()
   const { notify } = useToast()
-  const { hasPermission } = useAuth()
+  const { hasPermission, currentUser } = useAuth()
   const queryClient = useQueryClient()
   const canWrite = hasPermission('budgets.budgets.write')
 
@@ -61,6 +61,9 @@ export function BudgetsTab() {
     queryFn: () => getBudget(activeId as number),
     enabled: activeId !== null,
   })
+  // The budget's owner plans its lines (the API checks the same).
+  const ownsIt =
+    budget?.ownerId != null && currentUser != null && String(budget.ownerId) === currentUser.id
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -100,6 +103,11 @@ export function BudgetsTab() {
           onChange={(v) => setSelectedId(v ? Number(v) : null)}
           allowDeselect={false}
         />
+        {!canWrite && ownsIt && budget && !budget.approved && (
+          <Button variant="default" size="xs" onClick={() => setEditing(true)}>
+            {t('budgets.editLines', 'Edit lines')}
+          </Button>
+        )}
         {canWrite && (
           <Group gap="xs">
             {budget && !budget.approved && (
@@ -141,7 +149,14 @@ export function BudgetsTab() {
           {t('budgets.empty', 'No budget yet. Create one for this year.')}
         </Text>
       ) : (
-        <BudgetView budget={budget} />
+        <BudgetView
+          budget={budget}
+          onOwner={
+            canWrite && !budget.approved
+              ? (ownerId) => act(() => updateBudget(budget.id, { owner_id: ownerId }))
+              : undefined
+          }
+        />
       )}
 
       {creating && (
@@ -187,11 +202,35 @@ export function BudgetsTab() {
   )
 }
 
-function BudgetView({ budget }: { budget: Budget }) {
+function BudgetView({
+  budget,
+  onOwner,
+}: {
+  budget: Budget
+  /** Given to those who may choose the owner (budgets.write). */
+  onOwner?: (ownerId: number | null) => void
+}) {
   const { t } = useT()
   const sections: BudgetKind[] = ['income', 'expense']
   return (
     <div>
+      {onOwner ? (
+        <div style={{ marginBottom: 16, maxWidth: 420 }}>
+          <Field label={t('budgets.owner', 'Responsible')} hint={t('budgets.ownerHint')}>
+            <MemberPicker
+              value={budget.ownerId}
+              noneLabel={t('budgets.noOwner', 'Nobody')}
+              onChange={(id) => onOwner(id ? Number(id) : null)}
+            />
+          </Field>
+        </div>
+      ) : (
+        budget.ownerName && (
+          <Text fz="sm" c="dimmed" mb="md">
+            {t('budgets.owner', 'Responsible')}: {budget.ownerName}
+          </Text>
+        )
+      )}
       <Group gap="xl" mb="md">
         <Stat label={t('budgets.plannedResult', 'Planned result')} value={budget.plannedResult} />
         <Stat label={t('budgets.actualResult', 'Result so far')} value={budget.actualResult} />
