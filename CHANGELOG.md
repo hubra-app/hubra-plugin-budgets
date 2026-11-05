@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0
+
+- A budget can have an owner (Verantwortlich), such as a team's leader.
+  Whoever may edit budgets picks the owner above the budget. The owner
+  plans that budget's lines and notes without the right to edit every
+  budget; approving, renaming, deleting and handing it on stay with
+  `budgets.write`. The owner still needs `budgets.read` to see the Budgets
+  tab. Copying a budget to the next year keeps its owner.
+  Migration `3d7b1e9a5c42` adds `budgets.owner_id`.
+
 ## 1.2.0
 
 - An approved budget can be the source of the yearly expenses that

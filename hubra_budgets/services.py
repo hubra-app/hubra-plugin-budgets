@@ -10,6 +10,7 @@ from hubra.api.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.finance import Transaction, TransactionCategory
+from hubra.core.models.member import Member
 
 from .models import LINE_KINDS, Budget, BudgetLine
 
@@ -61,6 +62,8 @@ def budget_to_dict(budget: Budget, with_lines: bool = False) -> dict:
         "name": budget.name,
         "notes": budget.notes,
         "approved": budget.approved,
+        "ownerId": budget.owner_id,
+        "ownerName": _member_name(budget.owner),
         "totals": {
             kind: {k: _money(v) for k, v in values.items()}
             for kind, values in totals.items()
@@ -93,6 +96,27 @@ def budget_to_dict(budget: Budget, with_lines: bool = False) -> dict:
             if (cat, kind) not in planned_keys and total
         ]
     return data
+
+
+def _member_name(member: Member | None) -> str | None:
+    if member is None:
+        return None
+    return f"{member.first_name} {member.last_name}".strip() or None
+
+
+def _owner(value) -> int | None:
+    """A member id for ``owner_id``, or None to clear it."""
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise_error(400, "VALIDATION_ERROR", "owner_id must be a member id")
+    if db.session.get(Member, value) is None:
+        raise_error(400, "VALIDATION_ERROR", "unknown member")
+    return value
+
+
+# What the budget's owner may change without budgets.write.
+OWNER_FIELDS = frozenset({"notes"})
 
 
 def _text(value, field: str) -> str:
@@ -154,7 +178,12 @@ class BudgetService:
             raise_error(400, "VALIDATION_ERROR", "name is required")
         year = _year(data.get("year"))
         BudgetService._check_unique(year, name)
-        budget = Budget(year=year, name=name, notes=data.get("notes"))
+        budget = Budget(
+            year=year,
+            name=name,
+            notes=data.get("notes"),
+            owner_id=_owner(data.get("owner_id")),
+        )
         db.session.add(budget)
         db.session.flush()
         if data.get("lines") is not None:
@@ -178,6 +207,8 @@ class BudgetService:
             budget.notes = data["notes"]
         if "approved" in data:
             budget.approved = bool(data["approved"])
+        if "owner_id" in data:
+            budget.owner_id = _owner(data["owner_id"])
         log_audit(actor_id, "update_budget", "Budget", budget.id, budget.name)
         db.session.flush()
         return budget
@@ -244,6 +275,7 @@ class BudgetService:
                 "name": source.name,
                 "year": target_year,
                 "notes": source.notes,
+                "owner_id": source.owner_id,
                 "lines": [
                     {
                         "category_id": line.category_id,

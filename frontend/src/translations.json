@@ -23,7 +23,10 @@
       "defaultName": "Annual budget",
       "name": "Name",
       "year": "Year",
-      "addLine": "Add line"
+      "addLine": "Add line",
+      "owner": "Responsible",
+      "noOwner": "Nobody",
+      "ownerHint": "Plans this budget's lines and notes, even without the right to edit all budgets."
     },
     "shell": {
       "nav": {
@@ -55,7 +58,10 @@
       "defaultName": "Jahresbudget",
       "name": "Name",
       "year": "Jahr",
-      "addLine": "Poste hinzuefüege"
+      "addLine": "Poste hinzuefüege",
+      "owner": "Verantwortlich",
+      "noOwner": "Niemand",
+      "ownerHint": "Plant die Posten und Notizen dieses Budgets, auch ohne das Recht, alle Budgets zu bearbeiten."
     },
     "shell": {
       "nav": {
