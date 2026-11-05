@@ -2,16 +2,15 @@
 
 [![Test and release](https://github.com/hubra-app/hubra-plugin-budgets/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/hubra-app/hubra-plugin-budgets/actions/workflows/release.yml?query=branch%3Amain) [![Release](https://img.shields.io/github/v/release/hubra-app/hubra-plugin-budgets)](https://github.com/hubra-app/hubra-plugin-budgets/releases/latest) [![License: all rights reserved](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey)](LICENSE)
 
-A plugin for [Hubra](https://hubra.club). A yearly budget per transaction category, compared with what was booked. Approve and lock it, and copy it to the next year.
+A plugin for [Hubra](https://hubra.club). A yearly budget per transaction category, compared with what was booked. Approve and lock it, give it an owner who plans it, and copy it to the next year.
 
-**Version** 1.0.0 · **Works with** Hubra >=0.1,<1 · **Plugin id** `budgets`
+**Version** 1.3.0 · **Works with** Hubra >=0.2,<1 · **Plugin id** `budgets`
 
 ## Install
 
-Platform admins install it from the plugin catalogue in the manager portal
+Platform admins install it from the Plugin catalogue in manage
 (official Marketplace, <https://plugins.hubra.club/index.json>, signed with
-the Hubra project key). Clubs then switch it on under Einstellungen → Module
-& Plugins.
+the Hubra project key). Clubs then switch it on under Einstellungen → Module.
 
 ## Develop
 
