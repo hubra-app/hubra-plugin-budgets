@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 
 from sqlalchemy import extract, func, select
 
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.finance import Transaction, TransactionCategory

@@ -92,3 +92,14 @@ def test_offered_as_the_fee_basis_source(app, db, budgets):
     assert "budget" in basis["sources"]
     assert basis["period"] == {"year": 2026}
     assert basis["total"] == 9600 + 2000 + 400
+
+
+def test_a_year_without_an_approved_budget_says_so(app, db, budgets):
+    config = {"fee_basis_source": "budget"}
+    with (
+        patch("hubra.core.modules.get_config", return_value=config),
+        patch("hubra.core.modules.is_enabled", return_value=True),
+    ):
+        basis = fee_basis.fee_basis(today=date(2027, 3, 1))
+    assert basis["note"] == "NO_BUDGET"
+    assert basis["period"] == {"year": 2027}
