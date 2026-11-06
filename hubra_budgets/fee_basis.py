@@ -1,12 +1,18 @@
 """The approved budget as the source of the yearly expenses that percentage
-and formula tiers share (Finanzen › Beitragsgrundlage in Hubra)."""
+and formula tiers share (Finanzen › Beitragsgrundlage in Hubra).
+
+Hubra asks it through the query contract ``finance.budgets.fee_basis.budget``
+(docs/contracts.md in hubra); no Hubra internals are imported."""
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 
+from pydantic import BaseModel
 from sqlalchemy import select
 
+from hubra.core.contracts import SYSTEM, query
 from hubra.core.extensions import db
 
 from .models import Budget
@@ -42,10 +48,30 @@ def budget_lines(year: int) -> list[dict] | None:
     return sorted(lines.values(), key=lambda line: -line["amount"])
 
 
-def register() -> None:
-    """Offer the budget as a source, on a Hubra that has the fee basis."""
-    try:
-        from hubra.api.finance.fee_basis import register_source
-    except ImportError:  # Hubra before the Beitragsgrundlage page
-        return
-    register_source("budget", "finance.budgets", budget_lines)
+class SourceIn(BaseModel):
+    on: date
+
+
+class Line(BaseModel):
+    category_id: int | None = None
+    name: str | None = None
+    color: str | None = None
+    amount: float
+    items: list[dict] = []
+
+
+class SourceOut(BaseModel):
+    lines: list[Line]
+    period: dict | None = None
+    note: str | None = None
+
+
+def budget_source(ctx, data: SourceIn) -> SourceOut:
+    """The ``finance.budgets.fee_basis.budget`` query Hubra's fee basis asks:
+    the budget of the billing year that *on* falls in."""
+    period = query("finance.billing_period", on=data.on, actor=SYSTEM)
+    year = date.fromisoformat(period["start"]).year
+    lines = budget_lines(year)
+    if lines is None:
+        return SourceOut(lines=[], period={"year": year}, note="NO_BUDGET")
+    return SourceOut(lines=lines, period={"year": year})

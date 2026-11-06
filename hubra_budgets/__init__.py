@@ -1,5 +1,6 @@
 """Budgets: a plan per year and category, compared with booked transactions."""
 
+from hubra.core.contracts import query_contract
 from hubra.core.modules import Blueprint, Module
 
 module = Module(
@@ -16,8 +17,16 @@ module = Module(
         ),
     ),
     tables=("budgets", "budget_lines"),
+    # Hubra's fee basis (Finanzen › Beitragsgrundlage) asks the approved
+    # budget as its "budget" source; the billing year comes from Finance.
+    provides=(
+        query_contract(
+            "finance.budgets.fee_basis.budget",
+            "hubra_budgets.fee_basis:budget_source",
+            input="hubra_budgets.fee_basis:SourceIn",
+            output="hubra_budgets.fee_basis:SourceOut",
+            description="The approved budget's expenses of a billing year",
+        ),
+    ),
+    consumes={"finance.billing_period": ">=1,<2"},
 )
-
-from .fee_basis import register as _register_fee_basis  # noqa: E402
-
-_register_fee_basis()
