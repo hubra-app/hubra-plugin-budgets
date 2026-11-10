@@ -2,11 +2,12 @@
 
 ## Unreleased
 
-- Dashboard widget **Budget dieses Jahr**: per category of this year's budget, booked against planned, the most used first (expenses, or income; needs `budgets.budgets.read`).
+- German texts are in Standard German now; they were still in Swiss German dialect. The menu entry reads "Budgets".
 
 ## 1.4.0
 
 - Gives the standard roles access when a club first switches it on (`role_defaults`, docs/roles.md in hubra-app/hubra): Vorstand Ansehen, Kassier/in Alles. Roles without access don't see it; their own data from it stays on their profile. Needs Hubra 0.2.5 or later.
+- Dashboard widget **Budget dieses Jahr**: per category of this year's budget, booked against planned, the most used first (expenses, or income; needs `budgets.budgets.read`).
 
 ## 1.3.0
 
