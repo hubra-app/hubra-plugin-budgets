@@ -1,6 +1,6 @@
 """Budgets: a plan per year and category, compared with booked transactions."""
 
-from hubra.core.contracts import query_contract
+from hubra.core.contracts import WidgetField, query_contract, widget_contract
 from hubra.core.modules import Blueprint, Module
 
 module = Module(
@@ -29,6 +29,20 @@ module = Module(
             input="hubra_budgets.fee_basis:SourceIn",
             output="hubra_budgets.fee_basis:SourceOut",
             description="The approved budget's expenses of a billing year",
+        ),
+        # Dashboard widget (hubra_budgets/widgets.py).
+        widget_contract(
+            "finance.budgets.usage",
+            "hubra_budgets.widgets:usage",
+            label="budgets.widget.usage",
+            description="budgets.widget.usageHint",
+            size="m",
+            view="list",
+            perm="budgets.budgets.read",
+            fields=(
+                WidgetField("income", "budgets.widget.income", "switch", False),
+                WidgetField("count", "budgets.widget.count", "number", 5),
+            ),
         ),
     ),
     consumes={"finance.billing_period": ">=1,<2"},

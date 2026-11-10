@@ -175,3 +175,41 @@ def test_budget_owner_plans_their_budget(client, db, seeded_db, auth_headers, ca
     _login_member(client, "admin@test.ch")
     copy = client.post(f"/api/v1/budgets/{own}/copy", json={}).get_json()
     assert copy["ownerId"] == lead.id
+
+
+# ── Dashboard widgets ───────────────────────────────────────────────────────
+
+
+def test_usage_widget(client, db, auth_headers, cats):
+    from hubra.core import contracts
+
+    fees, hall = cats
+    year = date.today().year
+    drinks = TransactionCategory(name="Drinks")
+    db.session.add(drinks)
+    db.session.flush()
+    _tx(db, hall, "expense", "600", date(year, 1, 2))
+    _tx(db, drinks, "expense", "450", date(year, 1, 3))
+    db.session.commit()
+    resp = client.post(
+        "/api/v1/budgets/",
+        json={
+            "name": "Club",
+            "year": year,
+            "lines": [
+                {"category_id": fees.id, "kind": "income", "planned": 5000},
+                {"category_id": hall.id, "kind": "expense", "planned": 1200},
+                {"category_id": drinks.id, "kind": "expense", "planned": 500},
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 201, resp.get_json()
+
+    out = contracts.widget_data("finance.budgets.usage", {}, actor=contracts.SYSTEM)
+    assert [i["label"] for i in out["items"]] == ["Drinks", "Hall rent"]
+    assert out["items"][0]["sub"] == "CHF 450 / CHF 500 · 90%"
+    income = contracts.widget_data(
+        "finance.budgets.usage", {"income": True}, actor=contracts.SYSTEM
+    )
+    assert [i["label"] for i in income["items"]] == ["Fees"]
