@@ -28,6 +28,9 @@ module = Module(
             "hubra_budgets.fee_basis:budget_source",
             input="hubra_budgets.fee_basis:SourceIn",
             output="hubra_budgets.fee_basis:SourceOut",
+            # Hubra's fee basis asks as the system; anyone else asking for a
+            # member needs the right to see budgets.
+            perm="budgets.budgets.read",
             description="The approved budget's expenses of a billing year",
         ),
         # Dashboard widget (hubra_budgets/widgets.py).
