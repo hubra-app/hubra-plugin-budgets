@@ -3,6 +3,7 @@
 ## Unreleased
 
 - German texts are in Standard German now; they were still in Swiss German dialect. The menu entry reads "Budgets".
+- Budget names, notes and line notes are checked for type and length, and a line's category must be a whole id: a wrong value is now a clear 400 instead of a server error (security audit 2026-11).
 
 ## 1.4.0
 
