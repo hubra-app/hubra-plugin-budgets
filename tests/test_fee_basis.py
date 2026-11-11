@@ -103,3 +103,27 @@ def test_a_year_without_an_approved_budget_says_so(app, db, budgets):
         basis = fee_basis.fee_basis(today=date(2027, 3, 1))
     assert basis["note"] == "NO_BUDGET"
     assert basis["period"] == {"year": 2027}
+
+
+def test_asking_for_a_member_needs_the_right(app, db, budgets, seeded_db):
+    """Only the system (Hubra's fee basis) or a member who may see budgets
+    gets the budget's lines through the query."""
+    from tests.authz.conftest import _create_member_with_role
+
+    from hubra.core.contracts import SYSTEM, ActionForbidden, query
+
+    name = "finance.budgets.fee_basis.budget"
+    with patch("hubra.core.modules.is_enabled", return_value=True):
+        assert query(name, on="2026-10-31", actor=SYSTEM)["lines"]
+        nobody, _ = _create_member_with_role(
+            "nobody@test.ch", "Nobody", seeded_db["tier"].id, permission_keys=[]
+        )
+        with pytest.raises(ActionForbidden):
+            query(name, on="2026-10-31", actor=nobody.id)
+        reader, _ = _create_member_with_role(
+            "reader@test.ch",
+            "Reader",
+            seeded_db["tier"].id,
+            permission_keys=["budgets.budgets.read"],
+        )
+        assert query(name, on="2026-10-31", actor=reader.id)["lines"]
