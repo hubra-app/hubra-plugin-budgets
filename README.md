@@ -4,7 +4,7 @@
 
 A plugin for [Hubra](https://hubra.club). A yearly budget per transaction category, compared with what was booked. Approve and lock it, give it an owner who plans it, and copy it to the next year.
 
-**Version** 1.3.0 · **Works with** Hubra >=0.2,<1 · **Plugin id** `budgets`
+**Version** 1.4.1 · **Works with** Hubra >=0.2.5,<1 · **Plugin id** `budgets`
 
 ## Install
 
